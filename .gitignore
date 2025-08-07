@@ -1,0 +1,21 @@
+# Common
+node_modules/
+
+#environment variables
+.env
+
+#OS files
+.DS_Store
+
+# Logs
+*.log
+
+# Dependency directories
+client/node_modules/
+server/node_modules/
+
+# Build files
+client/build/
+
+#Others
+.token
