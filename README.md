@@ -1,13 +1,14 @@
 Welcome to Official documentation of Personal-notes-application, THIS IS NOT A README FILE. Its just documentation i created that shows lifecycle of this project development.
 
--This is a full-stack, beginner-friendly, Dockerized application that lets users manage their personal notes. Built from scratch for the EB Pearls DevOps Traineeship assignment.
+-This is a full-stack, beginner-friendly, Dockerized application that lets users manage their personal notes. Built from scratch for the implementation of Devops Concepts.
+Note: The front end and backend are build with the help of my instructor, fellow friends, AI tools and little bit of basic knowledge of programming and insights I got from my IT background in college.
 
 ## Tech Stack
 - Frontend: React
 - Backend: Node.js + Express
 - Database: MongoDB
-- Reverse Proxy: Nginx
-- Deployment: Docker + Bitbucket Pipelines
+- Reverse Proxy: Nginx 
+- Deployment: Docker + Jenkins Pipelines
 - Hosting: AWS EC2 (Ubuntu)
 
 ## Why build a Personal Notes application?
@@ -57,7 +58,7 @@ Storing sensitive data like Mongo URI , port number here prevents it from being 
 2. Install dependencies : npm install
 
 3. Start the server in develpoment mode: npm run dev; if successful , you will see:
-✅ Loaded env MONGO_URI: <your MongoDB URI>
+✅ Loaded env MONGO_URI: <your MongoDB URI, from the browser or MongoDb atlas UI>
 ✅ Connected to MongoDB
 🚀 Server running on port (your set port)
 
