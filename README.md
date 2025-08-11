@@ -103,3 +103,39 @@ Note that we have to run 2 different docker containers just to get our applicati
 - If we need to stop the application from running: docker-compose down (this stops and removes the container)
 - If we need to re-start the application: docker-compose up -d (this re builds and runs the program, in detached mode)
 
+### Setup Nginx and reverse proxy
+Deployed a React frontend and Node.js backend using Docker Compose and used Nginx as a reverse proxy to:
+- Serve the frontend (React build files).
+- Forward API requests to the backend without exposing a separate port.
+- Link both frontend and backend to a single domain: demo-notes.bidhanghimire420.com.np.
+
+## conf file
+Created a default.conf file inside nginx directory (which is located in root project dir), which basicaly does following:
+- / → sends all normal requests to frontend container.
+- /api → sends all API requests to backend container.
+- proxy_set_header lines ensure headers are forwarded properly.
+- proxy_http_version 1.1 is needed for WebSocket or keep-alive connections
+- in server_name we added our sub-domain, which is demo-notes.bidhanghimire420.com.np
+
+Note: we also adjusted the react api URL fix:
+in App.js (path: personal-notes-app/client/src), we changed the const API_URI = "api/notes", because we now pass requests
+through nginx and we dont need to point to the hardcoded backend link
+
+### Why Reverse proxy??
+A reverse proxy is a server that sits between clients (browsers) and application servers.
+Instead of clients talking directly to your backend, they send requests to Nginx, which then:
+- Serves static frontend files (index.html, JS, CSS).
+- Forwards /api requests to the backend service.
+Why we use it:
+-  Single entry point for both frontend and backend.
+-  Easier SSL setup. 
+-  Hides backend ports from public internet.
+
+### More about bidhanghimire420.com.np
+I have used a dns record (A records) in cloudfare to create and point domains/subdomains to our ec2 server,
+meaning, i have linked those domains/sub-domains with my Ec2's elastic IP address.
+
+###Configured in docker-compose.yml
+Added nginx service in our docker-compose file, so when next time we run docker-compose uo -d, three containers spawn up, inside docker-compose network
+one frontend, one backend and one nginx which acts as a brigde between frontend nad backend (i.e. re-routes based on api calls either to frontend or backend)
+

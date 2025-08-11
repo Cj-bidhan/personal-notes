@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const API_URL = "http://3.110.14.32:5000/api/notes";
+const API_URL = "/api/notes";
 
 function App() {
   const [notes, setNotes] = useState([]);
