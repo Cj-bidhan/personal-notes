@@ -133,9 +133,10 @@ Why we use it:
 
 ### More about bidhanghimire420.com.np
 I have used a dns record (A records) in cloudfare to create and point domains/subdomains to our ec2 server,
-meaning, i have linked those domains/sub-domains with my Ec2's elastic IP address.
+meaning, i have linked those domains/sub-domains with my Ec2's elastic IP address. Now the website opeans at 
+				demo-notes.bidhanghimire420.com.np
 
-###Configured in docker-compose.yml
+### Configured in docker-compose.yml
 Added nginx service in our docker-compose file, so when next time we run docker-compose uo -d, three containers spawn up, inside docker-compose network
 one frontend, one backend and one nginx which acts as a brigde between frontend nad backend (i.e. re-routes based on api calls either to frontend or backend)
 
