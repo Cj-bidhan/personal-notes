@@ -140,3 +140,68 @@ meaning, i have linked those domains/sub-domains with my Ec2's elastic IP addres
 Added nginx service in our docker-compose file, so when next time we run docker-compose uo -d, three containers spawn up, inside docker-compose network
 one frontend, one backend and one nginx which acts as a brigde between frontend nad backend (i.e. re-routes based on api calls either to frontend or backend)
 
+
+#ARCHITECTURE DIAGRAM:
+                ┌─────────────────────────────────┐
+                │        User's Browser            │
+                │  demo-notes.bidhanghimire420.com │
+                └─────────────────────────────────┘
+                               │
+                               ▼
+                 ┌────────────────────────┐
+                 │    Nginx Reverse Proxy  │  (Container)
+                 │  Port 80 on Host EC2    │
+                 └────────────────────────┘
+                   │                   │
+          ┌────────┘                   └─────────┐
+          ▼                                        ▼
+ ┌──────────────────┐                    ┌──────────────────┐
+ │  Frontend (React) │                    │ Backend (Node.js)│
+ │ Container:80      │                    │ Container:5000   │
+ └──────────────────┘                    └──────────────────┘
+                                                      │
+                                                      ▼
+                                         ┌────────────────────────┐
+                                         │ MongoDB Atlas (Cloud)  │
+                                         └────────────────────────┘
+
+
+##Securing with SSL and Certbot
+Right now:
+- Nginx reverse proxy is working for demo-notes.bidhanghimire420.com.np
+- It’s serving HTTP only (port 80)
+- We want HTTPS (port 443) with a green lock in the browse
+To do this:
+- Certbot will talk to Let’s Encrypt and verify the domain ownership
+  (like proving to a bank that you own a house before they give you the keys)
+- Let’s Encrypt gives us .pem files (SSL cert + private key)
+- Nginx will be configured to use those files for secure connections
+- Certbot will be run in Docker so it doesn’t mess with the host system
+
+To achieve this firstly we updated the docker-compose.yaml file and added a certbot container alonside nginx container.
+Then edited default.conf file to allo certbot to respond to Let's encrypt verifycation challenge. Then installed certbot (inside docker, not on host) using the following command:
+sudo docker-compose run certbot certbot certonly \
+  --webroot \
+  --webroot-path=/var/www/certbot \
+  --email <your-email@gmail.com> \
+  --agree-tos \
+  --no-eff-email \
+  -d demo-notes.bidhanghimire420.com.np
+
+Finally, we changed the folder persmissions and setuped a cronjob that runs everyday at 3.30 AM, which first checks the validity
+of the certificate and if it's near expiery date, it renews (certificate expries after 90 days)
+
+
+##The Architecture Diagram/ Flow chart
+
+
+[User]  <--HTTPS-->  [Nginx Reverse Proxy Container]
+                            |
+        ------------------------------------------------
+        |                                              |
+[Frontend Container]                             [Backend Container]
+      (React UI)                                    (API server)
+                            |
+                   [Certbot Container]
+                            |
+          (Creates and renews SSL certificates)
