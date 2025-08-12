@@ -1,6 +1,5 @@
 # Common
 node_modules/
-mongo-backup/
 
 #environment variables
 .env
@@ -24,3 +23,4 @@ client/build/
 #certificates
 certbot/
 renew_cert.sh
+mongo-backup/
