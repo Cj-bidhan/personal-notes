@@ -103,7 +103,7 @@ Note that we have to run 2 different docker containers just to get our applicati
 - If we need to stop the application from running: docker-compose down (this stops and removes the container)
 - If we need to re-start the application: docker-compose up -d (this re builds and runs the program, in detached mode)
 
-### Setup Nginx and reverse proxy
+### Step 6:  Nginx and reverse proxy
 Deployed a React frontend and Node.js backend using Docker Compose and used Nginx as a reverse proxy to:
 - Serve the frontend (React build files).
 - Forward API requests to the backend without exposing a separate port.
@@ -205,3 +205,54 @@ of the certificate and if it's near expiery date, it renews (certificate expries
                    [Certbot Container]
                             |
           (Creates and renews SSL certificates)
+
+
+
+## Step 7: Jenkins setup and CI/CD preparation
+1. Jenkins Setup on EC2 (CI Server):
+- Launched a new EC2 (Ubuntu) for Jenkins (3.6.254.90), then installed Jenkins, Java, Docker, Docker Compose.
+- Unlocked Jenkins and completed the initial setup.
+- Installed required plugins: Pipeline, GitHub Integration, SSH Agent, Docker Pipeline.
+
+2. GitHub Webhook Integration
+- Created a Personal Access Token (classic, with repo + admin:repo_hook) on GitHub.
+- Added GitHub credentials in Jenkins.
+- Configured webhook in GitHub repo → pointed to http://3.6.254.90:8080/github-webhook/.
+- Verified connection: Jenkins received PING webhook successfully.
+
+3. SSH Key Setup (CI → App EC2)
+- Generated a dedicated SSH keypair (id_jenkins_ed25519) on Jenkins EC2.
+- Added public key to ~/.ssh/authorized_keys of App EC2 (where frontend/backend run: 3.110.14.32).
+- Verified passwordless SSH works.
+
+4. Docker Hub Preparation
+- Created repos on Docker Hub: pnotes-frontend and pnotes-backend
+- Created an Access Token in Docker Hub for Jenkins push.
+- Added credentials in Jenkins (dockerhub-cred).
+
+5. Jenkinsfile Pipeline
+- Defined a multistage pipeline with these steps:
+    Checkout – pull latest GitHub code.
+    Docker Login – authenticate with Docker Hub.
+    Build & Push – build frontend + backend images, tag with commit SHA + latest, push to Docker Hub.
+    Deploy (App EC2) – SSH into App EC2.
+    Write .env.deploy with correct image tags.
+    Run:
+     - docker compose --env-file .env.deploy -f docker-compose.prod.yml pull
+     - docker compose --env-file .env.deploy -f docker-compose.prod.yml up -d --remove-orphans
+
+Note: We have used Jenkins CI on seperate server(3.6.254.90)  and CD project-server on sepreate server(3.110.14.32). This type of build is centralized 
+and not on the production machine. 
+
+6. Creation of docker-compose.prod.yml
+This is just a simple scripe that doesnot builds any thing instead pulls the image,( ${IMAGE}:${TAG} ) that Jenkins pushed.
+
+7. Summary:
+
+                     --------“CI builds immutable Docker images tagged by commit SHA.
+                              CD pulls those exact tags on EC2 via SSH and restarts via Compose.
+                              Rollback is as easy as redeploying the previous SHA.
+                              Nginx handles reverse proxy + SSL via Let’s Encrypt certbot (also automated renewal).
+                              I separated dev compose (build from source) from prod compose (pull images).
+                              Secrets are outside version control (server/.env).
+                              Webhooks trigger the pipeline automatically on push.”-----------

@@ -23,4 +23,6 @@ client/build/
 #certificates
 certbot/
 renew_cert.sh
+
+#backups
 mongo-backup/
