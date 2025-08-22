@@ -1,19 +1,23 @@
 pipeline {
   agent any
-  options { timestamps() }
-
-  environment {
-    DOCKERHUB_USER = 'hackeduser'
-
-    FRONTEND_IMAGE = "${DOCKERHUB_USER}/pnotes-frontend"
-    BACKEND_IMAGE  = "${DOCKERHUB_USER}/pnotes-backend"
-
-    // App EC2 details (where Nginx + compose run)
-    APP_HOST       = '3.110.14.32'
-    APP_DEPLOY_DIR = '/home/ubuntu/personal-notes-app'
+  options {
+    timestamps()                // Add timestamps to logs
+    disableConcurrentBuilds()   // Prevent overlapping builds
   }
 
-  triggers { githubPush() }
+  environment {
+    DOCKERHUB_USER   = 'hackeduser'
+
+    FRONTEND_IMAGE   = "${DOCKERHUB_USER}/pnotes-frontend"
+    BACKEND_IMAGE    = "${DOCKERHUB_USER}/pnotes-backend"
+
+    APP_HOST         = '3.110.14.32'
+    APP_DEPLOY_DIR   = '/home/ubuntu/personal-notes-app'
+  }
+
+  triggers {
+    githubPush()
+  }
 
   stages {
     stage('Checkout') {
@@ -21,7 +25,7 @@ pipeline {
         checkout scm
         script {
           env.SHORT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-          echo "SHORT_SHA=${env.SHORT_SHA}"
+          echo "Using commit SHA: ${env.SHORT_SHA}"
         }
       }
     }
@@ -35,16 +39,25 @@ pipeline {
     }
 
     stage('Build & Tag Images') {
-      steps {
-        sh """
-          # Backend
-          docker pull ${BACKEND_IMAGE}:latest || true
-          docker build -t ${BACKEND_IMAGE}:${SHORT_SHA} -t ${BACKEND_IMAGE}:latest --cache-from ${BACKEND_IMAGE}:latest server
-
-          # Frontend
-          docker pull ${FRONTEND_IMAGE}:latest || true
-          docker build -t ${FRONTEND_IMAGE}:${SHORT_SHA} -t ${FRONTEND_IMAGE}:latest --cache-from ${FRONTEND_IMAGE}:latest client
-        """
+      parallel {
+        stage('Backend') {
+          steps {
+            sh """
+              docker pull ${BACKEND_IMAGE}:latest || true
+              docker build -t ${BACKEND_IMAGE}:${SHORT_SHA} -t ${BACKEND_IMAGE}:latest \
+                --cache-from ${BACKEND_IMAGE}:latest server
+            """
+          }
+        }
+        stage('Frontend') {
+          steps {
+            sh """
+              docker pull ${FRONTEND_IMAGE}:latest || true
+              docker build -t ${FRONTEND_IMAGE}:${SHORT_SHA} -t ${FRONTEND_IMAGE}:latest \
+                --cache-from ${FRONTEND_IMAGE}:latest client
+            """
+          }
+        }
       }
     }
 
@@ -66,12 +79,12 @@ pipeline {
             ssh -o StrictHostKeyChecking=no ubuntu@${APP_HOST} '
               set -e
               cd ${APP_DEPLOY_DIR}
-              cat > .env.deploy <<EOF
-BACKEND_IMAGE=${BACKEND_IMAGE}
-BACKEND_TAG=${SHORT_SHA}
-FRONTEND_IMAGE=${FRONTEND_IMAGE}
-FRONTEND_TAG=${SHORT_SHA}
-EOF
+
+              echo "BACKEND_IMAGE=${BACKEND_IMAGE}"   >  .env.deploy
+              echo "BACKEND_TAG=${SHORT_SHA}"        >> .env.deploy
+              echo "FRONTEND_IMAGE=${FRONTEND_IMAGE}" >> .env.deploy
+              echo "FRONTEND_TAG=${SHORT_SHA}"       >> .env.deploy
+
               docker compose --env-file .env.deploy -f docker-compose.prod.yml pull
               docker compose --env-file .env.deploy -f docker-compose.prod.yml up -d --remove-orphans
             '
@@ -82,8 +95,14 @@ EOF
   }
 
   post {
-    always { sh 'docker logout || true' }
-    success { echo "Deployed ${FRONTEND_IMAGE}:${SHORT_SHA} & ${BACKEND_IMAGE}:${SHORT_SHA}" }
-    failure { echo "Build/Deploy failed. Check console log." }
+    always {
+      sh 'docker logout || true'
+    }
+    success {
+      echo "✅ Deployment successful: ${FRONTEND_IMAGE}:${SHORT_SHA} & ${BACKEND_IMAGE}:${SHORT_SHA}"
+    }
+    failure {
+      echo "❌ Build/Deploy failed. Check console logs."
+    }
   }
 }
