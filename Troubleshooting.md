@@ -211,6 +211,10 @@ Not just `renew`.
 - Restart Docker daemon if weird networking issues occur.
 - Use `curl` and `wget` inside containers to test connectivity.
 
+
+#12. Jenkins setup problems:
+1. Jenkins Pipeline Failure Due to Missing Environment Variable
+
 ---
 
 This document will be updated continuously as project progresses.

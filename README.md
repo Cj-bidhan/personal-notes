@@ -256,3 +256,22 @@ This is just a simple scripe that doesnot builds any thing instead pulls the ima
                               I separated dev compose (build from source) from prod compose (pull images).
                               Secrets are outside version control (server/.env).
                               Webhooks trigger the pipeline automatically on push.”-----------
+
+
+###Jenkinsfile Explanation:
+
+The Jenkinsfile is a declarative pipeline with the following stages:
+- Checkout Code: Pulls the latest code from GitHub using github-cred.
+- Docker Login: Logs into Docker Hub with dockerhub-creds using withCredentials. This ensures Docker images can be pushed.
+- Build & Push Frontend Image: Builds the frontend Docker image from client/Dockerfile and pushes it to Docker Hub.
+- Build & Push Backend Image: Builds the backend Docker image from server/Dockerfile and pushes it to Docker Hub.
+- Deploy to Server: Uses sshagent to SSH into EC2, pulls the latest code, and runs:
+                docker-compose -f docker-compose.prod.yml down
+                docker-compose -f docker-compose.prod.yml up -d
+- This deploys the application using the updated Docker images. All required environment variables (FRONTEND_IMAGE, BACKEND_IMAGE, FRONTEND_TAG, BACKEND_TAG) must be set.
+
+Key Points:
+- withCredentials securely handles sensitive information like Docker passwords.
+- env variables handle Docker image names and tags dynamically.
+- Post actions in Jenkins report pipeline success or failure.
+- The pipeline fully automates build → push → deploy.
