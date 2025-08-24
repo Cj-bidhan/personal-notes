@@ -6,7 +6,8 @@ pipeline {
   }
 
   environment {
-    
+    COMPOSE = "docker-compose.yml"
+ 
     DOCKERHUB_USER = 'hackeduser'
 
     FRONTEND_IMAGE = "${DOCKERHUB_USER}/pnotes-frontend"
