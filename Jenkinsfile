@@ -53,6 +53,10 @@ pipeline {
                 sshagent (credentials: ['project-server-ssh']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@3.110.14.32 '
+			export BACKEND_IMAGE=hackeduser/pnotes-backend
+			export BACKEND_TAG=latest
+			export FRONTEND_IMAGE=hackeduser/pnotes-frontend
+  			export FRONTEND_TAG=latest
                         cd ~/personal-notes-app &&
                         git pull origin main &&
                         docker-compose -f docker-compose.prod.yml down &&
