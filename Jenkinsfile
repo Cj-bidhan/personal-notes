@@ -4,8 +4,8 @@ pipeline {
     environment {
         FRONTEND_REPO = "hackeduser/pnotes-frontend"
         BACKEND_REPO  = "hackeduser/pnotes-backend"
-        DEPLOY_SERVER = "ubuntu@<3.110.14.32>"
-        DEPLOY_PATH   = "~/personal-notes-app"
+        FRONTEND_TAG  = "latest"
+        BACKEND_TAG   = "latest"
     }
 
     stages {
@@ -18,39 +18,46 @@ pipeline {
             }
         }
 
+        stage('Docker Login') {
+            steps {
+                echo "Logging into Docker Hub..."
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
+
         stage('Build & Push Frontend Image') {
             steps {
-                echo "Building and pushing frontend image..."
+                echo "Building frontend image..."
                 sh """
-                  docker build -t ${FRONTEND_REPO}:latest ./client
-                  docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASS
-                  docker push ${FRONTEND_REPO}:latest
+                docker build -t $FRONTEND_REPO:$FRONTEND_TAG ./client
+                docker push $FRONTEND_REPO:$FRONTEND_TAG
                 """
             }
         }
 
         stage('Build & Push Backend Image') {
             steps {
-                echo "Building and pushing backend image..."
+                echo "Building backend image..."
                 sh """
-                  docker build -t ${BACKEND_REPO}:latest ./server
-                  docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASS
-                  docker push ${BACKEND_REPO}:latest
+                docker build -t $BACKEND_REPO:$BACKEND_TAG ./server
+                docker push $BACKEND_REPO:$BACKEND_TAG
                 """
             }
         }
 
         stage('Deploy to Server') {
             steps {
-                echo "Deploying to EC2..."
-                sshagent(['project-server-ssh']) {
+                echo "Deploying app to project EC2..."
+                sshagent (credentials: ['project-server-ssh']) {
                     sh """
-                      ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} '
-                        cd ${DEPLOY_PATH} &&
-                        docker-compose -f docker-compose.prod.yml down || true &&
-                        docker-compose -f docker-compose.prod.yml pull &&
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.110.14.32 '
+                        cd ~/personal-notes-app &&
+                        git pull origin main &&
+                        docker-compose -f docker-compose.prod.yml down &&
                         docker-compose -f docker-compose.prod.yml up -d
-                      '
+                    '
                     """
                 }
             }
