@@ -18,7 +18,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building and pushing frontend image...'
-                    def frontendImage = docker.build("${FRONTEND_REPO}:latest", "./frontend")
+                    def frontendImage = docker.build("${FRONTEND_REPO}:latest", "./client")
                     frontendImage.push("latest")
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building and pushing backend image...'
-                    def backendImage = docker.build("${BACKEND_REPO}:latest", "./backend")
+                    def backendImage = docker.build("${BACKEND_REPO}:latest", "./server")
                     backendImage.push("latest")
                 }
             }
