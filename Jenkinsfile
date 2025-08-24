@@ -1,21 +1,24 @@
 pipeline {
   agent any
   options {
-    timestamps()                // Add timestamps to logs
-    disableConcurrentBuilds()   // Prevent overlapping builds
+    timestamps()
+    disableConcurrentBuilds()
   }
 
   environment {
-    DOCKERHUB_USER   = 'hackeduser'
+    
+    DOCKERHUB_USER = 'hackeduser'
 
-    FRONTEND_IMAGE   = "${DOCKERHUB_USER}/pnotes-frontend"
-    BACKEND_IMAGE    = "${DOCKERHUB_USER}/pnotes-backend"
+    FRONTEND_IMAGE = "${DOCKERHUB_USER}/pnotes-frontend"
+    BACKEND_IMAGE  = "${DOCKERHUB_USER}/pnotes-backend"
 
-    APP_HOST         = '3.110.14.32'
-    APP_DEPLOY_DIR   = '/home/ubuntu/personal-notes-app'
+    // ---- Remote deploy target  ----
+    APP_HOST       = '3.110.14.32'
+    APP_DEPLOY_DIR = '/home/ubuntu/personal-notes-app'
   }
 
   triggers {
+    // Webhook already configured in GitHub → this makes it auto-trigger
     githubPush()
   }
 
@@ -74,19 +77,37 @@ pipeline {
 
     stage('Deploy to App EC2') {
       steps {
+        
         sshagent(credentials: ['project-server-ssh']) {
           sh """
             ssh -o StrictHostKeyChecking=no ubuntu@${APP_HOST} '
-              set -e
+              set -euo pipefail
               cd ${APP_DEPLOY_DIR}
 
-              echo "BACKEND_IMAGE=${BACKEND_IMAGE}"   >  .env.deploy
-              echo "BACKEND_TAG=${SHORT_SHA}"        >> .env.deploy
-              echo "FRONTEND_IMAGE=${FRONTEND_IMAGE}" >> .env.deploy
-              echo "FRONTEND_TAG=${SHORT_SHA}"       >> .env.deploy
+              cat > .env.deploy <<EOT
+BACKEND_IMAGE=${BACKEND_IMAGE}
+BACKEND_TAG=${SHORT_SHA}
+FRONTEND_IMAGE=${FRONTEND_IMAGE}
+FRONTEND_TAG=${SHORT_SHA}
+EOT
 
-              docker compose --env-file .env.deploy -f docker-compose.prod.yml pull
-              docker compose --env-file .env.deploy -f docker-compose.prod.yml up -d --remove-orphans
+              if docker compose version >/dev/null 2>&1; then
+                COMPOSE="docker compose"
+              elif docker-compose version >/dev/null 2>&1; then
+                COMPOSE="docker-compose"
+              else
+                echo "ERROR: Docker Compose not found on target host." >&2
+                exit 1
+              
+
+              
+
+              set -a
+              . ./.env.deploy
+              set +a
+
+              $COMPOSE -f docker-compose.prod.yml pull
+              $COMPOSE -f docker-compose.prod.yml up -d --remove-orphans
             '
           """
         }
@@ -99,7 +120,7 @@ pipeline {
       sh 'docker logout || true'
     }
     success {
-      echo "✅ Deployment successful: ${FRONTEND_IMAGE}:${SHORT_SHA} & ${BACKEND_IMAGE}:${SHORT_SHA}"
+      echo "✅ Deployed: ${FRONTEND_IMAGE}:${SHORT_SHA} & ${BACKEND_IMAGE}:${SHORT_SHA}"
     }
     failure {
       echo "❌ Build/Deploy failed. Check console logs."
