@@ -1,0 +1,28 @@
+/* global.css - resets and layout helpers */
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; font-size: 16px; line-height: 1.45; }
+
+/* topbar sticky */
+.topbar { position: sticky; top: 0; z-index: 50; }
+
+/* simple responsive container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+/* layout grid used by App.css */
+.app-layout { display: flex; flex-direction: column; min-height: 100vh; }
+.content-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  gap: 18px;
+  align-items: start;
+  padding: 16px;
+}
+@media (max-width: 980px) {
+  .content-grid { grid-template-columns: 1fr; }
+}
