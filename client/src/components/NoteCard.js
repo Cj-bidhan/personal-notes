@@ -10,7 +10,7 @@ export default function NoteCard({ note = {}, onEdit = () => {}, onDelete = () =
         <h3 style={{ margin: 0 }}>{note.title || "Untitled"}</h3>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn" onClick={onEdit}>Edit</button>
-          <button onClick={() => { if (confirm("Delete note?")) onDelete(); }} style={{ background: "transparent", border: "1px solid var(--border)", padding: "6px 10px", borderRadius: 8 }}>Delete</button>
+          <button onClick={() => { if (window.confirm("Are you Sure?Delete note?")) onDelete(); }} style={{ background: "transparent", border: "1px solid var(--border)", padding: "6px 10px", borderRadius: 8 }}>Delete</button>
         </div>
       </div>
 
