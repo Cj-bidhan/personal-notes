@@ -60,6 +60,7 @@ pipeline {
                         cd ~/personal-notes-app &&
                         git pull origin main &&
                         docker-compose -f docker-compose.prod.yml down &&
+			docker-compose -f docker-compose.prod.yml pull &&	
                         docker-compose -f docker-compose.prod.yml up -d
                     '
                     """
