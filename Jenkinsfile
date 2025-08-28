@@ -59,8 +59,8 @@ pipeline {
   			export FRONTEND_TAG=latest
                         cd ~/personal-notes-app &&
                         git pull origin main &&
-                        docker-compose -f docker-compose.yml down &&
-                        docker-compose -f docker-compose.yml up -d
+                        docker-compose -f docker-compose.prod.yml down &&
+                        docker-compose -f docker-compose.prod.yml up -d
                     '
                     """
                 }
