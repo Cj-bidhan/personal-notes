@@ -275,3 +275,9 @@ Key Points:
 - env variables handle Docker image names and tags dynamically.
 - Post actions in Jenkins report pipeline success or failure.
 - The pipeline fully automates build → push → deploy.
+
+###UPDATE: Due to cost issues, i have decided to terminate Jenkins server on AWS
+- I move on to jenkins locally on my laptop
+- This means, we will be needing tool like ngrok to get a public url so that github can communicate with jenkins and trigger
+  the CICD peocess.
+-  
